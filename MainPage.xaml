@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:StudentPerformanceXmlApp.ViewModels"
+             xmlns:models="clr-namespace:StudentPerformanceXmlApp.Models"
+             x:Class="StudentPerformanceXmlApp.MainPage"
+             x:DataType="vm:MainViewModel"
+             Title="Успішність студентів">
+
+    <ContentPage.Resources>
+        <Style x:Key="Panel" TargetType="Border">
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#262A33}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light=#D9DEE9, Dark=#3A4050}" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        </Style>
+        <Style x:Key="Caption" TargetType="Label">
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="FontSize" Value="15" />
+        </Style>
+        <Style x:Key="Muted" TargetType="Label">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#5A6477, Dark=#A3ABBD}" />
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid ColumnDefinitions="400,*" Padding="16" ColumnSpacing="16">
+
+        <!-- ================= Ліва колонка: керування ================= -->
+        <ScrollView Grid.Column="0">
+            <VerticalStackLayout Spacing="12">
+
+                <Label Text="Успішність студентів" FontSize="26" FontAttributes="Bold" />
+                <Label Text="XML · SAX / DOM / LINQ to XML · XSLT → HTML" Style="{StaticResource Muted}" />
+
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="1. Дані" Style="{StaticResource Caption}" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Button Grid.Column="0" Text="Відкрити XML…" Command="{Binding BrowseCommand}" />
+                            <Button Grid.Column="1" Text="Приклад" Command="{Binding LoadSampleCommand}" />
+                        </Grid>
+                        <Label Text="{Binding FileInfo}" Style="{StaticResource Muted}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="2. Спосіб аналізу (Strategy)" Style="{StaticResource Caption}" />
+                        <Picker ItemsSource="{Binding Strategies}"
+                                SelectedItem="{Binding SelectedStrategy}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="3. Умови пошуку (поєднуються через І)" Style="{StaticResource Caption}" />
+                        <Picker Title="Атрибут із файлу"
+                                ItemsSource="{Binding AvailableAttributes}"
+                                SelectedItem="{Binding SelectedAttribute}" />
+                        <Picker Title="Значення з файлу (виберіть зі списку)"
+                                ItemsSource="{Binding AvailableValues}"
+                                SelectedItem="{Binding SelectedValue}" />
+                        <Entry Text="{Binding FilterValue}"
+                               Placeholder="або введіть своє: текст, &gt;=60, &lt;75, =100"
+                               ReturnCommand="{Binding AddFilterCommand}" />
+                        <Button Text="Додати умову" Command="{Binding AddFilterCommand}" />
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Filters}" Spacing="4">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:AttributeFilter">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Grid.Column="0" Text="{Binding Display}" VerticalOptions="Center" />
+                                        <Button Grid.Column="1" Text="✕" Padding="8,0" HeightRequest="30" MinimumWidthRequest="36"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=RemoveFilterCommand}"
+                                                CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                    <Button Grid.Row="0" Grid.Column="0" Text="🔍 Пошук" Command="{Binding SearchCommand}" />
+                    <Button Grid.Row="0" Grid.Column="1" Text="Clear" Command="{Binding ClearCommand}" />
+                    <Button Grid.Row="1" Grid.Column="0" Text="HTML (XSLT)" Command="{Binding ExportHtmlCommand}" />
+                    <Button Grid.Row="1" Grid.Column="1" Text="Вихід" Command="{Binding ExitCommand}" />
+                </Grid>
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ================= Права колонка: результати ================= -->
+        <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*" RowSpacing="8">
+            <Label Grid.Row="0" Text="{Binding Status}" FontAttributes="Bold" LineBreakMode="WordWrap" />
+            <Label Grid.Row="1" Text="{Binding QueryText}" Style="{StaticResource Muted}"
+                   FontFamily="Consolas" LineBreakMode="WordWrap" />
+
+            <CollectionView Grid.Row="2" ItemsSource="{Binding Results}" SelectionMode="None">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.EmptyView>
+                    <Label Text="Тут з'являться результати пошуку." Style="{StaticResource Muted}" Margin="4" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:StudentRecord">
+                        <Border Style="{StaticResource Panel}">
+                            <VerticalStackLayout Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Grid.Column="0" Text="{Binding Title}" FontSize="17" FontAttributes="Bold" />
+                                    <Label Grid.Column="1" Text="{Binding AverageText}" Style="{StaticResource Muted}" VerticalOptions="Center" />
+                                </Grid>
+                                <Label Text="{Binding Details}" Style="{StaticResource Muted}" />
+                                <Label Text="{Binding SubjectsText}" Margin="0,6,0,0" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+    </Grid>
+</ContentPage>
